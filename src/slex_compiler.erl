@@ -1,39 +1,31 @@
 %%%-------------------------------------------------------------------
-%%% File:      erlydtl_tsd_compiler.erl
+%%% File:      slex_compiler.erl
 %%% @author    Andreas Stenius <kaos@astekk.se>
 %%% @copyright 2013 Andreas Stenius
 %%% @doc
-%%% Template Scanner Definition compiler.
+%%% Stateful Lexical Analyzer Compiler.
 %%%
-%%% Compiles a TSD file as close as possible to the original erlydtl_scanner
-%%% implementation as possible, based on the rules in the TSD file.
+%%% Compiles a slex file mimicking the original erlydtl_scanner
+%%% implementation, based on the rules in the slex file.
 %%% @end
 %%%
-%%% The MIT License
+%%% Copyright 2013 Andreas Stenius
 %%%
-%%% Copyright (c) 2013 Andreas Stenius
+%%% Licensed under the Apache License, Version 2.0 (the "License");
+%%% you may not use this file except in compliance with the License.
+%%% You may obtain a copy of the License at
 %%%
-%%% Permission is hereby granted, free of charge, to any person obtaining a copy
-%%% of this software and associated documentation files (the "Software"), to deal
-%%% in the Software without restriction, including without limitation the rights
-%%% to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-%%% copies of the Software, and to permit persons to whom the Software is
-%%% furnished to do so, subject to the following conditions:
+%%%     http://www.apache.org/licenses/LICENSE-2.0
 %%%
-%%% The above copyright notice and this permission notice shall be included in
-%%% all copies or substantial portions of the Software.
-%%%
-%%% THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-%%% IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-%%% FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-%%% AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-%%% LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-%%% OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-%%% THE SOFTWARE.
+%%% Unless required by applicable law or agreed to in writing, software
+%%% distributed under the License is distributed on an "AS IS" BASIS,
+%%% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+%%% See the License for the specific language governing permissions and
+%%% limitations under the License.
 %%%
 %%% @since 2013-11-05 by Andreas Stenius
 %%%-------------------------------------------------------------------
--module(erlydtl_tsd_compiler).
+-module(slex_compiler).
 
 -export([compile/1, compile/2, format_error/1]).
 -export([compile_to_source/1]).
@@ -138,9 +130,9 @@ scan_and_parse(String, Options) ->
                       {ok, Data} = file:read_file(File),
                       String ++ binary_to_list(Data)
               end,
-    case erlydtl_tsd_scanner:string(String1) of
+    case slex_scanner:string(String1) of
         {ok, Tokens, _} ->
-            case erlydtl_tsd_parser:parse(Tokens) of
+            case slex_parser:parse(Tokens) of
                 {ok, Props} ->
                     Keys = proplists:get_keys(Props),
                     Scanner = [parsed(Key, get_all_values(Key, Props)) || Key <- Keys],
@@ -834,8 +826,7 @@ compile_tag_test_() ->
 scanner_test_() ->
     {setup,
      fun () ->
-             compile(filename:join(code:lib_dir(erlydtl, src),
-                                   "erlydtl_new_scanner.tsd"))
+             compile(filename:join(code:priv_dir(slex), "test.slex"))
      end,
      fun ({ok, M, _}) ->
              F = scan,

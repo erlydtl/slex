@@ -4,3 +4,6 @@ deps
 *.beam
 *.plt
 erl_crash.dump
+ebin
+src/slex_parser.erl
+src/slex_scanner.erl

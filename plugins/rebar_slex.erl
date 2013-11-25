@@ -3,34 +3,26 @@
 %%% @author    Andreas Stenius <kaos@astekk.se>
 %%% @copyright 2013 Andreas Stenius
 %%% @doc
-%%% TSD compiler plugin for rebar.
+%%% slex compiler plugin for rebar.
 %%% @end
 %%%
-%%% The MIT License
+%%% Copyright 2013 Andreas Stenius
 %%%
-%%% Copyright (c) 2013 Andreas Stenius
+%%% Licensed under the Apache License, Version 2.0 (the "License");
+%%% you may not use this file except in compliance with the License.
+%%% You may obtain a copy of the License at
 %%%
-%%% Permission is hereby granted, free of charge, to any person obtaining a copy
-%%% of this software and associated documentation files (the "Software"), to deal
-%%% in the Software without restriction, including without limitation the rights
-%%% to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-%%% copies of the Software, and to permit persons to whom the Software is
-%%% furnished to do so, subject to the following conditions:
+%%%     http://www.apache.org/licenses/LICENSE-2.0
 %%%
-%%% The above copyright notice and this permission notice shall be included in
-%%% all copies or substantial portions of the Software.
-%%%
-%%% THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-%%% IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-%%% FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-%%% AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-%%% LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-%%% OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-%%% THE SOFTWARE.
+%%% Unless required by applicable law or agreed to in writing, software
+%%% distributed under the License is distributed on an "AS IS" BASIS,
+%%% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+%%% See the License for the specific language governing permissions and
+%%% limitations under the License.
 %%%
 %%% @since 2013-11-05 by Andreas Stenius
 %%%-------------------------------------------------------------------
--module(rebar_tsd).
+-module(rebar_slex).
 -export([compile/2]).
 
 %% for internal use only
@@ -58,8 +50,8 @@
 compile(Config, _AppFile) ->
     rebar_base_compiler:run(Config,
                             [],
-                            "src", ".tsd", "ebin", ".beam",
-                            fun compile_tsd/3).
+                            "src", ".slex", "ebin", ".beam",
+                            fun compile_slex/3).
 
 
 %% ===================================================================
@@ -68,7 +60,7 @@ compile(Config, _AppFile) ->
 
 info(help, compile) ->
     ?CONSOLE(
-       "Build Template Scanner Definition (*.tsd) sources.~n"
+       "Build slex (*.slex) sources.~n"
        "~n"
        "Valid rebar.config options:~n"
        "  ~p~n",
@@ -76,8 +68,8 @@ info(help, compile) ->
         undefined
        ]).
 
-compile_tsd(Source, Target, Config) ->
-    try erlydtl_tsd_compiler:compile(Source, [{out_dir, ebin}]) of
+compile_slex(Source, Target, Config) ->
+    try slex_compiler:compile(Source, [{out_dir, ebin}]) of
         {ok, _, Target} -> ok;
         {error, Error} ->
             ?DEBUG("compile ~p -> ~p ~n  fail: ~P~n", [Source, Target, Error, 10]),
