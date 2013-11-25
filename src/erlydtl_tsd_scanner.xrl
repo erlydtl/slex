@@ -49,14 +49,17 @@ Rules.
 {IDENTIFIER} : {token, {identifier, TokenLine, list_to_atom(TokenChars)}}.
 {NUMBER} : {token, {number, TokenLine, list_to_integer(TokenChars)}}.
 {SYMBOLS} : {token, {string, TokenLine, unescape(TokenChars)}}.
-'[^']*' : {token, {string, TokenLine, string:strip(TokenChars, both, $')}}.
-"[^"]*" : {token, {string, TokenLine, string:strip(TokenChars, both, $")}}.
+'(\\.|[^'\n\\])*' : {token, {string, TokenLine, string_token($', TokenChars)}}.
+"(\\.|[^"\n\\])*" : {token, {string, TokenLine, string_token($", TokenChars)}}.
 
 Erlang code.
 
 keyword([$.]) -> '.';
 keyword([$.|Cs]) -> list_to_atom(Cs);
 keyword(Cs) -> list_to_atom(Cs).
+
+string_token(Q, Cs) ->
+  unescape(string:strip(Cs, both, Q)).
 
 unescape($n) -> $\n;
 unescape($r) -> $\r;

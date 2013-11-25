@@ -62,8 +62,8 @@
 compile(Input) ->
     compile(Input, []).
 
-compile(Data, _Options) when is_binary(Data) ->
-    case scan_and_parse(binary_to_list(Data)) of
+compile(Data, Options) when is_binary(Data) ->
+    case scan_and_parse(binary_to_list(Data), Options) of
         {ok, Scanner} ->
             Forms = compile_module(Scanner),
             case compile:forms(revert_forms(Forms), [return]) of
@@ -127,7 +127,18 @@ parsed(Key, Values) ->
     {Key, Values}.
 
 scan_and_parse(String) ->
-    case erlydtl_tsd_scanner:string(String) of
+    scan_and_parse(String, []).
+
+scan_and_parse(String, Options) ->
+    String1 = case get_value(extra_data, Options) of
+                  undefined -> String;
+                  Data when is_list(Data) ->
+                      String ++ Data;
+                  {file, File} ->
+                      {ok, Data} = file:read_file(File),
+                      String ++ binary_to_list(Data)
+              end,
+    case erlydtl_tsd_scanner:string(String1) of
         {ok, Tokens, _} ->
             case erlydtl_tsd_parser:parse(Tokens) of
                 {ok, Props} ->
