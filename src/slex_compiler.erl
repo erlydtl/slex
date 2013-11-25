@@ -28,7 +28,6 @@
 -module(slex_compiler).
 
 -export([compile/1, compile/2, format_error/1]).
--export([compile_to_source/1]).
 
 -import(erl_syntax, [application/2, application/3, clause/3, clause/2,
                      variable/1, string/1, infix_expr/3, operator/1,
@@ -58,14 +57,22 @@ compile(Data, Options) when is_binary(Data) ->
     case scan_and_parse(binary_to_list(Data), Options) of
         {ok, Scanner} ->
             Forms = compile_module(Scanner),
-            case compile:forms(revert_forms(Forms), [return]) of
-                {ok, Mod, Bin, _} ->
-                    code:purge(Mod),
-                    case code:load_binary(Mod, atom_to_list(Mod) ++ ".tsd", Bin) of
-                        {module, Mod} -> {ok, Mod, Bin};
+            case get_value(target, Options, beam) of
+                beam ->
+                    case compile:forms(revert_forms(Forms), [return]) of
+                        {ok, Mod, Bin, _} ->
+                            code:purge(Mod),
+                            case code:load_binary(Mod, atom_to_list(Mod) ++ ".tsd", Bin) of
+                                {module, Mod} -> {ok, Mod, Bin};
+                                Err -> Err
+                            end;
                         Err -> Err
                     end;
-                Err -> Err
+                erl ->
+                    {ok, io_lib:format(
+                           "~s~n",
+                           [erl_prettypr:format(Forms)]
+                          )}
             end;
         Err -> Err
     end;
@@ -73,7 +80,7 @@ compile(File, Options) ->
     {ok, Data} = file:read_file(File),
     case compile(Data, [{source, File}|Options]) of
         {ok, Mod, Bin}=Res ->
-            case proplists:get_value(out_dir, Options) of
+            case get_value(out_dir, Options) of
                 undefined -> Res;
                 OutDir ->
                     OutFile = filename:join(
@@ -83,15 +90,19 @@ compile(File, Options) ->
                         Err -> Err
                     end
             end;
+        {ok, Src}=Res ->
+            case get_value(out_dir, Options) of
+                undefined -> Res;
+                OutDir ->
+                    OutFile = filename:join(
+                               [OutDir, filename:basename(File, ".slex") ++ ".erl"]),
+                    case file:write_file(OutFile, Src) of
+                        ok -> {ok, OutFile};
+                        Err -> Err
+                    end
+            end;
         Err -> Err
     end.
-
-compile_to_source(Bin) when is_binary(Bin) ->
-    {ok, Scanner} = scan_and_parse(binary_to_list(Bin)),
-    io_lib:format("~s~n", [erl_prettypr:format(compile_module(Scanner))]);
-compile_to_source(Filename) ->
-    {ok, Data} = file:read_file(Filename),
-    compile_to_source(Data).
 
 format_error({multiple_append_actions, Prefix}) ->
     io_lib:format(
@@ -117,9 +128,6 @@ parsed(rule, Rules) ->
     {rule, lists:keysort(#rule.prio, Rules)};
 parsed(Key, Values) ->
     {Key, Values}.
-
-scan_and_parse(String) ->
-    scan_and_parse(String, []).
 
 scan_and_parse(String, Options) ->
     String1 = case get_value(extra_data, Options) of
@@ -458,6 +466,9 @@ compile_tag_body({code, C}, _) -> block_expr(C).
 
 
 -ifdef (TEST).
+
+scan_and_parse(String) ->
+    scan_and_parse(String, []).
 
 -define(test_scan_and_parse(String, Prop, Expect),
         {ok, Scanner} = scan_and_parse(String),

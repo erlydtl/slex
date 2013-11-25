@@ -50,7 +50,7 @@
 compile(Config, _AppFile) ->
     rebar_base_compiler:run(Config,
                             [],
-                            "src", ".slex", "ebin", ".beam",
+                            "src", ".slex", "src", ".erl",
                             fun compile_slex/3).
 
 
@@ -69,8 +69,8 @@ info(help, compile) ->
        ]).
 
 compile_slex(Source, Target, Config) ->
-    try slex_compiler:compile(Source, [{out_dir, ebin}]) of
-        {ok, _, Target} -> ok;
+    try slex_compiler:compile(Source, [{target, erl}, {out_dir, src}]) of
+        {ok, Target} -> ok;
         {error, Error} ->
             ?DEBUG("compile ~p -> ~p ~n  fail: ~P~n", [Source, Target, Error, 10]),
             rebar_base_compiler:error_tuple(Config, Source, [{Source, [Error]}], [], [])
