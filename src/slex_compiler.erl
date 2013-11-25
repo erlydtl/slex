@@ -911,4 +911,35 @@ scanner_test_() ->
          (Err) -> ?_test(throw({setup_error, Err}))
      end}.
 
+extra_data_test() ->
+    String =
+        "-test orig."
+        "10 'foo' bar: skip.",
+    Extra =
+        "5 'bar' foo: skip, bar until 'rab'."
+        "-test extra.",
+    Expect =
+        [{attr,
+          [{test, [orig]},
+           {test, [extra]}]
+         },
+         {rule,
+          [{rule,
+            {prio, 5},
+            {prefix, "bar"},
+            {state, foo},
+            {guard, []},
+            {[], {state, {bar, "rab"}}}
+           },
+           {rule,
+            {prio, 10},
+            {prefix, "foo"},
+            {state, bar},
+            {guard, []},
+            {[], keep_state}
+           }]
+         }],
+    {ok, Scanner} = scan_and_parse(String, [{extra_data, Extra}]),
+    ?assertMatch(Expect, Scanner).
+
 -endif.
