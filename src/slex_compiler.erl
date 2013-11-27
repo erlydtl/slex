@@ -29,14 +29,15 @@
 
 -export([compile/1, compile/2, format_error/1]).
 
--import(erl_syntax, [application/2, application/3, clause/3, clause/2,
-                     variable/1, string/1, infix_expr/3, operator/1,
-                     block_expr/1, match_expr/2, atom/1, list/1,
-                     list/2, tuple/1, integer/1, if_expr/1,
-                     fun_expr/1, case_expr/2, char/1, underscore/0,
-                     function/2, attribute/2, arity_qualifier/2,
-                     revert_forms/1, form_list/1]).
 -import(proplists, [get_value/3, get_all_values/2]).
+-import(erl_syntax, [application/2, application/3, arity_qualifier/2,
+                     atom/1, attribute/2, block_expr/1, case_expr/2,
+                     char/1, comment/1, clause/2, clause/3,
+                     form_list/1, fun_expr/1, function/2, if_expr/1,
+                     infix_expr/3, integer/1, list/1, list/2,
+                     match_expr/2, operator/1, revert_forms/1,
+                     set_precomments/2, string/1, tuple/1,
+                     underscore/0, variable/1]).
 
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
@@ -112,6 +113,8 @@ format_error({multiple_append_actions, Prefix}) ->
            any_prefix -> "`any' prefix"
        end]).
 
+%% TODO: format errors for attribute_error and bad_state_transition.
+
 
 %% ===================================================================
 %% Internal functions
@@ -120,8 +123,18 @@ format_error({multiple_append_actions, Prefix}) ->
 get_value(Key, Props) ->
     get_value(Key, Props, default(Key)).
 
-default(function) -> [scan];
-default(init_state) -> [root];
+get_attr1(Key, Attrs) ->
+    case get_value(Key, Attrs) of
+        {[Attr], Comments} ->
+            {atom(Attr), comment(Comments)};
+        Attr -> throw({?MODULE, {attribute_error, {Key, Attr}}})
+    end.
+
+default(attr) -> [];
+default(rule) -> [];
+default(tag) -> [];
+default(function) -> {[scan], []};
+default(init_state) -> {[root], []};
 default(_) -> undefined.
 
 parsed(rule, Rules) ->
@@ -164,27 +177,37 @@ compile_module(Scanner) ->
 
 compile_head_forms(Scanner, Acc) ->
     Attrs = get_value(attr, Scanner),
-    Mod = atom(hd(get_value(module, Attrs))),
-    Name = atom(hd(get_value(function, Attrs))),
-    [attribute(atom(module), [Mod]),
-     attribute(atom(export), [list(
-                                [arity_qualifier(Name, integer(1)),
-                                 arity_qualifier(Name, integer(4))
-                                ])])
-     | get_value(form, Scanner)] ++ Acc.
+    {Mod, ModC} = get_attr1(module, Attrs),
+    {Fun, FunC} = get_attr1(function, Attrs),
+
+    ModuleAttribute = set_precomments(attribute(atom(module), [Mod]), [ModC]),
+    ExportAttribute = set_precomments(
+                        attribute(
+                          atom(export),
+                          [list(
+                             [arity_qualifier(Fun, integer(1)),
+                              arity_qualifier(Fun, integer(4))
+                             ])]),
+                        [FunC]),
+    Forms =
+        case get_value(form, Scanner) of
+            undefined -> [];
+            Fs -> [set_precomments(F, [comment(Fc)]) || {F, Fc} <- Fs]
+        end,
+    [ModuleAttribute, ExportAttribute | Forms] ++ Acc.
 
 compile_funcs(Scanner, Acc) ->
     Attrs = get_value(attr, Scanner),
     Rules = get_value(rule, Scanner),
     Tags = get_value(tag, Scanner),
 
-    Name = atom(hd(get_value(function, Attrs))),
+    {Name, _} = get_attr1(function, Attrs),
     [compile_scanner_api(Name, Attrs),
      compile_scanner(Name, Rules)
      | compile_post_process(atom(post_process), Tags, Acc)].
 
 compile_scanner_api(Name, Attrs) ->
-    State = atom(hd(get_value(init_state, Attrs))),
+    {State, _} = get_attr1(init_state, Attrs),
     function(
       Name, 
       [clause(

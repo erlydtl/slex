@@ -24,13 +24,13 @@
 %%%-------------------------------------------------------------------
 
 Nonterminals
-  action actions arg args attr guard prefix rule rule_body prio
-  scanner scanner_exp state state_in state_new state_next states tag
-  tag_body tag_head tag_op.
+  action actions arg args attr comments guard prefix rule rule_body
+  prio scanner scanner_exp state state_in state_new state_next states
+  tag tag_body tag_head tag_op.
   
 Terminals
   '+' '-' ':' ',' '.'
-  any code identifier number skip string until.
+  any code comment identifier number skip string until.
 
 Rootsymbol
   scanner.
@@ -46,13 +46,16 @@ scanner -> scanner_exp scanner : ['$1' | '$2'].
 %% A Scanner is made up of `attr' `rule', `tag' and `form' expressions.
 scanner_exp -> attr : {attr, '$1'}.
 scanner_exp -> rule : {rule, '$1'}.
-scanner_exp -> tag : {tag, '$1'}.
-scanner_exp -> code '.' : {form, value_of('$1')}.
+scanner_exp -> tag  : {tag, '$1'}.
+scanner_exp -> comments code '.' : {form, {value_of('$2'), '$1'}}.
+
+comments -> comment comments : [value_of('$1') | '$2'].
+comments -> '$empty' : [].
 
 %% ----------------------------------------
 %% `attr'
 %% ----------------------------------------
-attr -> '-' identifier args '.' : {value_of('$2'), '$3'}.
+attr -> comments '-' identifier args '.' : {value_of('$3'), {'$4', '$1'}}.
 
 
 %% ----------------------------------------

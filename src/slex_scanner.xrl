@@ -34,7 +34,8 @@ SYMBOLS = (\\.|[^a-zA-Z0-9'":.,+\-\s\t\n\\])(\\.|[^.,\s\t\n\\])*
 
 Rules.
 
-\%\%.*\n : skip_token.
+\%\%\%.* : {token, {comment, TokenLine, tl(TokenChars)}}.
+\%\%[^\%].*\n : skip_token.
 (\s|\t|\n)+ : skip_token.
 {KEYWORDS} : {token, {keyword(TokenChars), TokenLine}}.
 {CODE} : parse_code(TokenLine, TokenChars).
