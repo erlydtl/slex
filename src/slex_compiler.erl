@@ -720,7 +720,7 @@ compile_rule_test_() ->
         "      end,\n"
         "      {in_number, E})."),
      ?_test_rule(
-        "10 \! any:: expr io:write(\"custom code!\"), w00t end.",
+        "10 \! any: expr io:write(\"custom code!\"), w00t end.",
         {rule,
          {prio, 10},
          {prefix,"!"},
@@ -807,9 +807,9 @@ compile_rule_test_() ->
         "    t(T, [{bar, P, \"\\\"\"} | post_process(S, bar)],\n"
         "      {R, C + 1}, baz)."),
      ?_test_rules(
-        "17 'c' any::expr 17 end.\n"
-        "5 'a' any::expr 5 end.\n"
-        "10 \"b\" any::expr 10 end.",
+        "17 'c' any:expr 17 end.\n"
+        "5 'a' any:expr 5 end.\n"
+        "10 \"b\" any:expr 10 end.",
         [{rule,
           {prio, 5},
           {prefix, "a"},
@@ -836,7 +836,7 @@ compile_rule_test_() ->
         "t(\"c\" ++ T, S, {R, C} = P, {_, E} = St) -> 17."),
      ?_test_rule(
         "%%% rule comment.\n"
-        "18 \\. any::expr ok end.",
+        "18 \\. any:expr ok end.",
         {rule,
          {prio, 18},
          {prefix, "."},
@@ -871,7 +871,7 @@ compile_tag_test_() ->
         "\t\t L1 = lists:reverse(L), L2 = list_to_atom(L1), L2\n"
         "\t       end)."),
      ?_test_tag(
-        "foo: dummy, :expr test:dummy(L1) end.",
+        "foo: dummy, expr test:dummy(L1) end.",
         {tag,
          [{state,foo}],
          {guard,[]},
@@ -883,7 +883,7 @@ compile_tag_test_() ->
         "\t\t L1 = dummy(L), L2 = begin test:dummy(L1) end, L2\n"
         "\t       end)."),
      ?_test_tag(
-        "foo::expr setelement(1, T, bar) end.",
+        "foo:expr setelement(1, T, bar) end.",
         {tag,
          [{state,foo}],
          {guard,[]},
@@ -891,7 +891,7 @@ compile_tag_test_() ->
          []},
         "t(_, {foo, _, L} = T, _) -> setelement(1, T, bar)."),
      ?_test_tag(
-        "foo, bar::expr setelement(1, T, baz) end.",
+        "foo, bar:expr setelement(1, T, baz) end.",
         {tag,
          {[{state,foo}],{state,bar}},
          {guard,[]},
@@ -909,7 +909,7 @@ compile_tag_test_() ->
         "    setelement(3, T, begin L1 = to_atom(L), L1 end)."),
      ?_test_tag(
         "%%% tag comment.\n"
-        "foo::expr bar end.",
+        "foo:expr bar end.",
         {tag,
          [{state,foo}],
          {guard,[]},

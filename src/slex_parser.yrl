@@ -78,7 +78,7 @@ state_in -> any '-' : any_stateless.
 rule_body -> actions : {'$1', keep_state}.
 rule_body -> state_new : {[], '$1'}.
 rule_body -> actions ',' state_next : {'$1', '$3'}.
-rule_body -> code : {code, value_of('$2')}.
+rule_body -> code : {code, value_of('$1')}.
 
 actions -> action actions : ['$1' | '$2'].
 actions -> skip : [].
@@ -109,7 +109,7 @@ tag_body -> tag_op : ['$1'].
 tag_body -> tag_op ',' tag_body : ['$1' | '$3'].
 
 tag_op -> args : '$1'.
-tag_op -> ':' code : {code, value_of('$2')}.
+tag_op -> code : {code, value_of('$1')}.
 
 states -> state : ['$1'].
 states -> state states : ['$1' | '$2'].

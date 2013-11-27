@@ -62,6 +62,11 @@ Comments start with ``%%`` and run until the end of the line.
 
 Example: ``%% this is a comment.``
 
+Comments prefixed with three or more percent signs are included in the
+generated `.erl` source file.
+
+Example: ``%%% comment to be included in the generated source.``
+
 keywords
 --------
 
@@ -103,21 +108,127 @@ and optional arguments and terminated by a period:
 rules
 =====
 
-A rule has five parts:
+Rules make out the main functionality of the scanner, and each rule is
+applied to the input text, in order of rule priority.
+
+A rule has five parts: ``prio prefix state [, guard] : body.``
 
   1. Priority. The rules are matched in order of their priority
      (lowest number first).
   2. Prefix. The prefix that should match the input text.
-  3. Current state. The state of the scanner in order to test the
-     rule.
+  3. Current state. The state of the scanner for the rule to apply.
   4. Guard expression. Optional expression to further refine if the
      rule applies.
-  5. Rule body. The body is either an expression that implements the
-     rule, or is given as actions and new state. Actions is optional
-     and when not used indicated either by the ``skip`` keyword, or by
-     the presence of only new state. New state is also optional, but
-     when provided consists of an identifier optionally followed by
-     the ``until`` keyword and a string, specifying the tag closer.
+  5. Rule body, as described below.
+  
+Example rule: ``10 <? in_text: open_tag, in_tag until ?>.``
+
+Will match on input text of "<?" when the scanner is in state
+``in_text``, and save a ``open_tag`` token and continue scanning in
+state ``in_tag``. The "until ?>" sets the extra data for the state,
+which can be used by another rule to detect when this state should
+end.
+
+1. priority
+-----------
+
+The priority is to allow injection of new rules passed in to the
+compiler with the ``extra_data`` option.
+
+All rules are sorted in ascending priority when building the scanner
+function clauses.
+
+2. prefix
+---------
+
+The prefix is either the keyword ``any`` or a string that should match
+the input text for the rule to apply.
+
+3. current state
+----------------
+
+The state of the scanner that the rule applies to. There are a few
+tricks in play here to specify the properties of the state, see [states].
+
+In addition to the rules given in [states], if the state is suffixed
+with a ``+`` sign, the state extra data must also match the prefix in
+order for the rule to apply.
+
+Example, to close the ``in_tag`` state given in an earlier example:
+
+  ``20 ?> in_tag+: close_tag, in_text-.``.
+
+This will match on input text of "?>" when the scanner is in state
+``in_tag`` with extra data "?>", and save a ``close_tag`` token and
+continue in scanning in state ``in_text`` with no extra data.
+
+Instead of ``in_tag+``, we could have said ``any+``, and it would then
+match any state with extra data "?>".
+
+4. guard expression (optional)
+------------------------------
+
+The guard expression, if provided, should be a Erlang guard expression
+on the form: ``expr <guard code...> end``.
+
+5. body
+-------
+
+The body is either a combination of action(s) and state transition
+separated by comman ``,``, or an Erlang expression that implements the
+rule body on the form: ``expr <rule body code...> end``.
+
+Actions are any number of tokens to save, or the keyword ``skip`` if
+no tokens are to be saved when this rule applies.
+
+A action token can be an identifier or a string.  For identifiers, the
+saved token is on the form: ``{<identifier>, {Row, Col}, Prefix}``,
+while for strings it is on the form: ``{'<string>', {Row, Col}}``.
+
+If the identifier is prefixed by a ``+`` sign and the last saved token
+also was a ``<identifier>`` then ``Prefix`` is added to the value of
+that token instead of adding a new token.
+
+If the identifier is suffixed by ``-<string>``, then the ``<string>``
+will be used as value instead of ``Prefix`` for the token.
+
+Example actions:
+
+  * ``literal``, will save ``{literal, Pos, Prefix}``.
+  * ``+string``, if previous token was not a ``string`` token:
+    ``{string, Pos, Prefix}``, or if previous token was a ``string``,
+    will update it: ``{string, _, Prefix ++ _}`` (``_`` indicates previous value).
+  * ``foo 'bar' baz-'moot'``, will save three tokens: ``{baz, Pos,
+    "moot"}, {bar, Pos}, {foo, Pos, Prefix}``.
+
+After the actions, an optional state transition can be specified by
+providing a state name and optionally the extra data in the form of a
+string for the state, using the ``until`` keyword.
+
+Example state transitions:
+
+  * ``plain-``, switch to state ``plain``, with no extra data.
+  * ``my_state``, switch to ``my_state`` and keep the extra data from
+    the current state.
+  * ``custom until 'bail'``, switch to state ``custom`` with extra
+    data ``"bail"``.
+
+If a state transition is provided, the actions can be left out
+entirely, including the separating comma.
+
+
+states
+======
+
+There's two kinds of state: stateless and stateful. The
+stateless state is a state that doesn't carry any extra information
+besides its name, while a stateful state carries an extra term,
+usually a string indicating the text that will end the state (but can
+be anything).
+
+When specifying states in slex, a state name by itself refers to a
+stateful state. To refer to a stateless state, add a dash ``-`` suffix
+to the state name.
 
 
 token post processing
