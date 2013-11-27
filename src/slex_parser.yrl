@@ -61,7 +61,8 @@ attr -> comments '-' identifier args '.' : {value_of('$3'), {'$4', '$1'}}.
 %% ----------------------------------------
 %% `rule'
 %% ----------------------------------------
-rule -> prio prefix state_in guard ':' rule_body '.' : {rule, '$1', '$2', '$3', '$4', '$6'}.
+rule -> comments prio prefix state_in guard ':' rule_body '.'
+  : {rule, '$2', '$3', '$4', '$5', '$7', '$1'}.
 
 prio -> number : {prio, value_of('$1')}.
 
@@ -77,7 +78,7 @@ state_in -> any '-' : any_stateless.
 rule_body -> actions : {'$1', keep_state}.
 rule_body -> state_new : {[], '$1'}.
 rule_body -> actions ',' state_next : {'$1', '$3'}.
-rule_body -> ':' code : {code, value_of('$2')}.
+rule_body -> code : {code, value_of('$2')}.
 
 actions -> action actions : ['$1' | '$2'].
 actions -> skip : [].
@@ -98,7 +99,8 @@ state_new -> identifier until string : {state, {value_of('$1'), value_of('$3')}}
 %% ----------------------------------------
 %% `tag'
 %% ----------------------------------------
-tag -> tag_head guard ':' tag_body '.' : {tag, '$1', '$2', '$4'}.
+tag -> comments tag_head guard ':' tag_body '.'
+  : {tag, '$2', '$3', '$5', '$1'}.
 
 tag_head -> states : lists:reverse('$1').
 tag_head -> states ',' state : {lists:reverse('$1'), '$3'}.
