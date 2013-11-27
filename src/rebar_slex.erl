@@ -23,7 +23,7 @@
 %%% @since 2013-11-05 by Andreas Stenius
 %%%-------------------------------------------------------------------
 -module(rebar_slex).
--export([compile/2]).
+-export([pre_compile/2]).
 
 %% for internal use only
 -export([info/2]).
@@ -47,7 +47,7 @@
 %% Public API
 %% ===================================================================
 
-compile(Config, _AppFile) ->
+pre_compile(Config, _AppFile) ->
     rebar_base_compiler:run(Config,
                             [],
                             "src", ".slex", "src", ".erl",
@@ -60,7 +60,7 @@ compile(Config, _AppFile) ->
 
 info(help, compile) ->
     ?CONSOLE(
-       "Build slex (*.slex) sources.~n"
+       "Compile slex (*.slex) sources to Erlang sources (*.erl).~n"
        "~n"
        "Valid rebar.config options:~n"
        "  ~p~n",
