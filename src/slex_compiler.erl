@@ -30,6 +30,7 @@
 -export([compile/1, compile/2, format_error/1]).
 
 -import(proplists, [get_value/3, get_all_values/2]).
+
 -import(erl_syntax, [application/2, application/3, arity_qualifier/2,
                      atom/1, attribute/2, block_expr/1, case_expr/2,
                      char/1, comment/1, clause/2, clause/3,
@@ -57,7 +58,7 @@ compile(Input) ->
 compile(Data, Options) when is_binary(Data) ->
     case scan_and_parse(binary_to_list(Data), Options) of
         {ok, Scanner} ->
-            Forms = compile_module(Scanner),
+            Forms = compile_module(Scanner, Options),
             case get_value(target, Options, beam) of
                 beam ->
                     case compile:forms(revert_forms(Forms), [return]) of
@@ -163,24 +164,27 @@ scan_and_parse(String, Options) ->
         {error, Err, _} -> {error, Err}
     end.
 
-compile_module(Scanner) ->
+compile_module(Scanner, Options) ->
     form_list(
       lists:foldr(
         fun (F, Acc) ->
-                F(Scanner, Acc)
+                F(Scanner, Options, Acc)
         end,
         [],
-        [fun compile_head_forms/2,
-         fun compile_funcs/2
+        [fun compile_head_forms/3,
+         fun compile_funcs/3
         ]
        )).
 
-compile_head_forms(Scanner, Acc) ->
+compile_head_forms(Scanner, Options, Acc) ->
     Attrs = get_value(attr, Scanner),
     {Mod, ModC} = get_attr1(module, Attrs),
     {Fun, FunC} = get_attr1(function, Attrs),
 
-    ModuleAttribute = set_precomments(attribute(atom(module), [Mod]), [ModC]),
+    ModuleAttribute = set_precomments(
+                        attribute(atom(module), [Mod]),
+                        [comment(["%%%% THIS IS A GENERATED FILE %%%%%\n"]),
+                         ModC]),
     ExportAttribute = set_precomments(
                         attribute(
                           atom(export),
@@ -189,14 +193,37 @@ compile_head_forms(Scanner, Acc) ->
                               arity_qualifier(Fun, integer(4))
                              ])]),
                         [FunC]),
+
+    SlexVsn =
+        case application:get_key(slex, vsn) of
+            undefined ->
+                ok = application:load(slex),
+                {ok, V} = application:get_key(slex, vsn),
+                V;
+            {ok, V} -> V
+        end,
+    {{Y,M,D},{H,Mm,S}} = calendar:universal_time(),
+    MetaAttribute = set_precomments(
+                      attribute(
+                        atom(slex_source),
+                        [string(get_value(source, Options, "<unknown>"))]),
+                      [comment(
+                         [io_lib:format(
+                            "% This file was generated "
+                            "~4b-~2b-~2b ~2b:~2b:~2b UTC by slex ~s.",
+                            [Y, M, D, H, Mm, S, SlexVsn]),
+                          "% http://github.com/erlydtl/slex"
+                         ])
+                      ]),
     Forms =
         case get_value(form, Scanner) of
             undefined -> [];
             Fs -> [set_precomments(F, [comment(Fc)]) || {F, Fc} <- Fs]
         end,
-    [ModuleAttribute, ExportAttribute | Forms] ++ Acc.
 
-compile_funcs(Scanner, Acc) ->
+    [ModuleAttribute, MetaAttribute, ExportAttribute | Forms] ++ Acc.
+
+compile_funcs(Scanner, _Options, Acc) ->
     Attrs = get_value(attr, Scanner),
     Rules = get_value(rule, Scanner),
     Tags = get_value(tag, Scanner),
