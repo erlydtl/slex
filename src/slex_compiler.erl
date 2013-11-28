@@ -183,7 +183,7 @@ compile_head_forms(Scanner, Options, Acc) ->
 
     ModuleAttribute = set_precomments(
                         attribute(atom(module), [Mod]),
-                        [comment(["%%%% THIS IS A GENERATED FILE %%%%%\n"]),
+                        [comment(["%%%% THIS IS A SLEX GENERATED FILE %%%%%\n"]),
                          ModC]),
     ExportAttribute = set_precomments(
                         attribute(
@@ -210,7 +210,8 @@ compile_head_forms(Scanner, Options, Acc) ->
                       [comment(
                          [io_lib:format(
                             "% This file was generated "
-                            "~4b-~2b-~2b ~2b:~2b:~2b UTC by slex ~s.",
+                            "~4b-~2..0b-~2..0b ~2..0b:~2..0b:~2..0b"
+                            " UTC by slex ~s.",
                             [Y, M, D, H, Mm, S, SlexVsn]),
                           "% http://github.com/erlydtl/slex"
                          ])
