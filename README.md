@@ -104,6 +104,13 @@ and optional arguments and terminated by a period:
 
   ``-my_attr foo 123.``
 
+Supported attributes:
+
+  * ``module``
+  * ``function``
+  * ``init_state``
+  * ``include``
+
 
 rules
 =====

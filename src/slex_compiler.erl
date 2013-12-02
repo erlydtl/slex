@@ -143,6 +143,33 @@ parsed(rule, Rules) ->
 parsed(Key, Values) ->
     {Key, Values}.
 
+include_files(Parsed) ->
+    lists:flatten(
+      lists:reverse(
+        lists:foldl(
+          fun ({attr, {include, {[Lib, File], _}}}, Acc) ->
+                  Path = filename:join(code:lib_dir(Lib), File),
+                  Included =
+                      case file:read_file(Path) of
+                          {ok, Data} ->
+                              case slex_scanner:string(
+                                     binary_to_list(Data)) of
+                                  {ok, Tokens, _} ->
+                                      case slex_parser:parse(Tokens) of
+                                          {ok, P} -> P;
+                                          {error, Err, _State} -> Err
+                                      end;
+                                  {error, Err, _} -> Err
+                              end;
+                          Err -> Err
+                      end,
+                  if is_list(Included) -> [Included|Acc];
+                     true -> throw({?MODULE, {include_file, Path, Included}})
+                  end;
+              (Prop, Acc) -> [Prop|Acc]
+          end,
+          [], Parsed))).
+
 scan_and_parse(String, Options) ->
     String1 = case get_value(extra_data, Options) of
                   undefined -> String;
@@ -155,7 +182,8 @@ scan_and_parse(String, Options) ->
     case slex_scanner:string(String1) of
         {ok, Tokens, _} ->
             case slex_parser:parse(Tokens) of
-                {ok, Props} ->
+                {ok, Parsed} ->
+                    Props = include_files(Parsed),
                     Keys = proplists:get_keys(Props),
                     Scanner = [parsed(Key, get_all_values(Key, Props)) || Key <- Keys],
                     {ok, Scanner};
@@ -553,6 +581,8 @@ scan_and_parse(String) ->
 
 -define(test_attr(String, Attr),
        ?test_scan_and_parse(String, attr, [Attr])).
+-define(test_attrs(String, Attrs),
+       ?test_scan_and_parse(String, attr, Attrs)).
 
 -define(test_rule(String, Rule, Result),
         ?test_scan_parse_compile(String, rule, [Rule], Result)).
@@ -569,6 +599,9 @@ scan_and_parse(String) ->
 
 -define(_test_attr(String, Attr),
         {?LINE, fun () -> ?test_attr(String, Attr) end}).
+
+-define(_test_attrs(String, Attrs),
+        {?LINE, fun () -> ?test_attrs(String, Attrs) end}).
 
 -define(_test_rule(String, Rule, Result),
         {?LINE, fun () -> ?test_rule(String, Rule, Result) end}).
@@ -592,7 +625,20 @@ attr_test_() ->
      ?_test_attr(
         "%%% a comment.\n"
         "-my_attr test this.",
-        {my_attr, {[test, this], ["%% a comment."]}})
+        {my_attr, {[test, this], ["%% a comment."]}}),
+
+     %% test include, and that order does matter
+     ?_test_attrs(
+        "-include slex 'priv/test.slex'.",
+        [{module, {[test_scanner], _}}|_]),
+     ?_test_attrs(
+        "-include slex 'priv/test.slex'.\n"
+        "-module foo_bar.",
+        [{module, {[test_scanner], _}}|_]),
+     ?_test_attrs(
+        "-module foo_bar.\n"
+        "-include slex 'priv/test.slex'.",
+        [{module, {[foo_bar], _}}|_])
     ].
 
 compile_rule_test_() ->
