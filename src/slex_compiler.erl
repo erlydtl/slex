@@ -31,14 +31,14 @@
 
 -import(proplists, [get_value/3, get_all_values/2]).
 
--import(erl_syntax, [application/2, application/3, arity_qualifier/2,
-                     atom/1, attribute/2, block_expr/1, case_expr/2,
-                     char/1, comment/1, clause/2, clause/3,
-                     form_list/1, fun_expr/1, function/2, if_expr/1,
-                     infix_expr/3, integer/1, list/1, list/2,
-                     match_expr/2, operator/1, revert_forms/1,
-                     set_precomments/2, string/1, tuple/1,
-                     underscore/0, variable/1]).
+-import(erl_syntax, [abstract/1, application/2, application/3,
+                     arity_qualifier/2, atom/1, attribute/2,
+                     block_expr/1, case_expr/2, char/1, comment/1,
+                     clause/2, clause/3, form_list/1, fun_expr/1,
+                     function/2, if_expr/1, infix_expr/3, integer/1,
+                     list/1, list/2, match_expr/2, operator/1,
+                     revert_forms/1, set_precomments/2, string/1,
+                     tuple/1, underscore/0, variable/1]).
 
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
@@ -156,7 +156,7 @@ include_files(Parsed) ->
                                      binary_to_list(Data)) of
                                   {ok, Tokens, _} ->
                                       case slex_parser:parse(Tokens) of
-                                          {ok, P} -> P;
+                                          {ok, P} -> [{source, {Lib, File}}|P];
                                           {error, Err, _State} -> Err
                                       end;
                                   {error, Err, _} -> Err
@@ -234,7 +234,9 @@ compile_head_forms(Scanner, Options, Acc) ->
     MetaAttribute = set_precomments(
                       attribute(
                         atom(slex_source),
-                        [string(get_value(source, Options, "<unknown>"))]),
+                        [abstract([get_value(source, Options, '<string>')
+                                   |get_value(source, Scanner, [])])
+                        ]),
                       [comment(
                          [io_lib:format(
                             "% This file was generated "

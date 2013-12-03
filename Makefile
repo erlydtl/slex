@@ -2,7 +2,7 @@ ERL=erl
 ERLC=erlc
 REBAR=./rebar
 
-all: compile
+all: compile test
 
 compile:
 	@$(REBAR) compile
