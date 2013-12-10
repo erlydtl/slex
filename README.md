@@ -1,7 +1,10 @@
 slex
 ====
 
+[![Build Status](https://travis-ci.org/erlydtl/slex.png?branch=master)](https://travis-ci.org/erlydtl/slex)
+
 Stateful Lexical Analyzer Compiler.
+
 
 language
 ========
@@ -268,3 +271,6 @@ Example:
   ``form -record(foo, {bar, baz}) end``
   ``form foo(Bar) -> {baz, Bar} end``
   ``expr H >= $0 andalso H =< $9 end``
+
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/erlydtl/slex/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
