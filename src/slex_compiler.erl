@@ -275,6 +275,14 @@ compile_scanner_api(Name, Attrs) ->
             Name, [variable('Template'), list([]),
                    tuple([integer(1), integer(1)]),
                    State])
+         ]),
+       clause(
+         [variable('Template')],
+         [application(atom(is_binary), [variable('Template')])],
+         [application(
+            Name, [application(atom(binary_to_list),
+                               [variable('Template')])
+                  ])
          ])
       ]).
 
