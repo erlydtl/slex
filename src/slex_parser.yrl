@@ -25,8 +25,8 @@
 
 Nonterminals
   action actions arg args attr comments guard prefix rule rule_body
-  prio scanner scanner_exp state state_in state_new state_next states
-  tag tag_body tag_head tag_op tag_state.
+  prio scanner scanner_exp state state_in state_new state_name
+  state_next states tag tag_body tag_head tag_op.
   
 Terminals
   '+' '-' ':' ',' '.'
@@ -111,11 +111,8 @@ tag_body -> tag_op ',' tag_body : ['$1' | '$3'].
 tag_op -> args : '$1'.
 tag_op -> code : {code, value_of('$1')}.
 
-states -> tag_state : ['$1'].
-states -> tag_state states : ['$1' | '$2'].
-
-tag_state -> state : '$1'.
-tag_state -> string : {state, list_to_atom(value_of('$1'))}.
+states -> state : ['$1'].
+states -> state states : ['$1' | '$2'].
 
 
 %% ----------------------------------------
@@ -131,8 +128,11 @@ arg -> string : value_of('$1').
 guard -> ',' code : {guard, value_of('$2')}.
 guard -> '$empty' : {guard, []}.
 
-state -> identifier : {state, value_of('$1')}.
-state -> identifier '-' : {stateless, value_of('$1')}.
+state -> state_name : {state, '$1'}.
+state -> state_name '-' : {stateless, '$1'}.
+
+state_name -> identifier : value_of('$1').
+state_name -> string : list_to_atom(value_of('$1')).
 
 
 %% ----------------------------------------

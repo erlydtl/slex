@@ -1002,13 +1002,13 @@ compile_tag_test_() ->
         "%%% tag comment.\n"
         "t(_, {foo, _, L} = T, _) -> bar."),
      ?_test_tag(
-       "\\. foo: expr dummy end.",
+       "\\. - foo: expr dummy end.",
        {tag,
-        [{state,foo}, {state,'.'}],
+        [{state,foo}, {stateless,'.'}],
         {guard,[]},
         [{code, _}],
         []},
-        "t([{'.', _, _} | _], {foo, _, L} = T, _) -> dummy.")
+        "t([{'.', _} | _], {foo, _, L} = T, _) -> dummy.")
     ].
 
 scanner_test_() ->
