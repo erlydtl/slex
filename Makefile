@@ -1,6 +1,6 @@
 ERL=erl
 ERLC=erlc
-REBAR=./rebar
+REBAR=rebar3
 
 all: compile test
 
@@ -12,3 +12,6 @@ test:
 
 clean:
 	@$(REBAR) clean
+
+realclean: clean
+	rm -rf _build
