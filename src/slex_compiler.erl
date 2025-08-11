@@ -663,8 +663,10 @@ compile_rule_test_() ->
           {state,{in_code,"}}"}}},
          []},
         "t(\"{{\" ++ T, S, {R, C} = P, in_text) ->\n"
-        "    t(T, [{open_var, P, \"{{\"} | post_process(S, open_var)],\n"
-        "      {R, C + 2}, {in_code, \"}}\"})."),
+        "    t(T,\n"
+        "      [{open_var, P, \"{{\"} | post_process(S, open_var)],\n"
+        "      {R, C + 2},\n"
+        "      {in_code, \"}}\"})."),
      ?_test_rule(
         "1 {# in_text-: in_comment until #}.",
         {rule,
@@ -689,13 +691,13 @@ compile_rule_test_() ->
         "t([H | T], S, {R, C} = P, in_text = St) ->\n"
         "    t(T,\n"
         "      case S of\n"
-        "\t[{string, _, L} = M | Ss] ->\n"
-        "\t    [setelement(3, M, [H | L]) | Ss];\n"
-        "\t_ -> [{string, P, [H]} | post_process(S, string)]\n"
+        "          [{string, _, L} = M | Ss] ->\n"
+        "              [setelement(3, M, [H | L]) | Ss];\n"
+        "          _ -> [{string, P, [H]} | post_process(S, string)]\n"
         "      end,\n"
         "      case H of\n"
-        "\t$\\n -> {R + 1, 1};\n"
-        "\t_ -> {R, C + 1}\n"
+        "          $\\n -> {R + 1, 1};\n"
+        "          _ -> {R, C + 1}\n"
         "      end,\n"
         "      St)."),
      ?_test_rule(
@@ -711,8 +713,9 @@ compile_rule_test_() ->
         "t(\"\\\"\" ++ T, S, {R, C} = P, {in_code, E}) ->\n"
         "    t(T,\n"
         "      [{string_literal, P, \"\\\"\"} | post_process(S,\n"
-        "\t\t\t\t\t\tstring_literal)],\n"
-        "      {R, C + 1}, {in_double_quote, E})."),
+        "                                                string_literal)],\n"
+        "      {R, C + 1},\n"
+        "      {in_double_quote, E})."),
      ?_test_rule(
         "4 }} any+: close_var, in_text-.",
         {rule,
@@ -726,7 +729,8 @@ compile_rule_test_() ->
         "t(\"}}\" ++ T, S, {R, C} = P, {_, \"}}\"}) ->\n"
         "    t(T,\n"
         "      [{close_var, P, \"}}\"} | post_process(S, close_var)],\n"
-        "      {R, C + 2}, in_text)."),
+        "      {R, C + 2},\n"
+        "      in_text)."),
      ?_test_rule(
         "5 \\\" in_double_quote: +string_literal, in_code.",
         {rule,
@@ -740,13 +744,14 @@ compile_rule_test_() ->
         "t(\"\\\"\" ++ T, S, {R, C} = P, {in_double_quote, E}) ->\n"
         "    t(T,\n"
         "      case S of\n"
-        "\t[{string_literal, _, L} = M | Ss] ->\n"
-        "\t    [setelement(3, M, \"\\\"\" ++ L) | Ss];\n"
-        "\t_ ->\n"
-        "\t    [{string_literal, P, \"\\\"\"} | post_process(S,\n"
-        "\t\t\t\t\t\t      string_literal)]\n"
+        "          [{string_literal, _, L} = M | Ss] ->\n"
+        "              [setelement(3, M, \"\\\"\" ++ L) | Ss];\n"
+        "          _ ->\n"
+        "              [{string_literal, P, \"\\\"\"} | post_process(S,\n"
+        "                                                        string_literal)]\n"
         "      end,\n"
-        "      {R, C + 1}, {in_code, E})."),
+        "      {R, C + 1},\n"
+        "      {in_code, E})."),
      ?_test_rule(
         "6 == any: ==, in_code.",
         {rule,
@@ -758,7 +763,9 @@ compile_rule_test_() ->
           {state,in_code}},
          []},
         "t(\"==\" ++ T, S, {R, C} = P, {_, E}) ->\n"
-        "    t(T, [{'==', P} | post_process(S, '==')], {R, C + 2},\n"
+        "    t(T,\n"
+        "      [{'==', P} | post_process(S, '==')],\n"
+        "      {R, C + 2},\n"
         "      {in_code, E})."),
      ?_test_rule(
         "7 \\  in_code: skip.",
@@ -797,10 +804,10 @@ compile_rule_test_() ->
         "    when H >= $0 andalso H =< $9 orelse H == $- ->\n"
         "    t(T,\n"
         "      [{number_literal, P, [H]} | post_process(S,\n"
-        "\t\t\t\t\t       number_literal)],\n"
+        "                                               number_literal)],\n"
         "      case H of\n"
-        "\t$\\n -> {R + 1, 1};\n"
-        "\t_ -> {R, C + 1}\n"
+        "          $\\n -> {R + 1, 1};\n"
+        "          _ -> {R, C + 1}\n"
         "      end,\n"
         "      {in_number, E})."),
      ?_test_rule(
@@ -813,7 +820,8 @@ compile_rule_test_() ->
          {code,[_,_]},
          []},
         "t(\"!\" ++ T, S, {R, C} = P, {_, E} = St) ->\n"
-        "    io:write(\"custom code!\"), w00t."),
+        "    io:write(\"custom code!\"),\n"
+        "    w00t."),
      ?_test_rule(
         "11 = any-:skip.",
         {rule,
@@ -856,14 +864,18 @@ compile_rule_test_() ->
          {[{append,foo}],
           keep_state},
          []},
-        "t(\"\\n\" ++ T, S, {R, C} = P, {_, E} = St) ->\n"
+        "t(\"\\n"
+        "\" ++ T, S, {R, C} = P, {_, E} = St) ->\n"
         "    t(T,\n"
         "      case S of\n"
-        "\t[{foo, _, L} = M | Ss] ->\n"
-        "\t    [setelement(3, M, \"\\n\" ++ L) | Ss];\n"
-        "\t_ -> [{foo, P, \"\\n\"} | post_process(S, foo)]\n"
+        "          [{foo, _, L} = M | Ss] ->\n"
+        "              [setelement(3, M, \"\\n"
+        "\" ++ L) | Ss];\n"
+        "          _ -> [{foo, P, \"\\n"
+        "\"} | post_process(S, foo)]\n"
         "      end,\n"
-        "      {R + 1, 1}, St)."),
+        "      {R + 1, 1},\n"
+        "      St)."),
      ?_test_rule(
         "15 _( any: \\_ \\(, in_code.",
         {rule,
@@ -875,8 +887,10 @@ compile_rule_test_() ->
           {state,in_code}},
          []},
         "t(\"_(\" ++ T, S, {R, C} = P, {_, E}) ->\n"
-        "    t(T, [{'(', P}, {'_', P} | post_process(S, '_')],\n"
-        "      {R, C + 2}, {in_code, E})."),
+        "    t(T,\n"
+        "      [{'(', P}, {'_', P} | post_process(S, '_')],\n"
+        "      {R, C + 2},\n"
+        "      {in_code, E})."),
      ?_test_rule(
         "16 \\' foo-: bar-\\\", baz-.",
         {rule,
@@ -888,8 +902,10 @@ compile_rule_test_() ->
           {stateless,baz}},
          []},
         "t(\"'\" ++ T, S, {R, C} = P, foo) ->\n"
-        "    t(T, [{bar, P, \"\\\"\"} | post_process(S, bar)],\n"
-        "      {R, C + 1}, baz)."),
+        "    t(T,\n"
+        "      [{bar, P, \"\\\"\"} | post_process(S, bar)],\n"
+        "      {R, C + 1},\n"
+        "      baz)."),
      ?_test_rules(
         "17 'c' any:expr 17 end.\n"
         "5 'a' any:expr 5 end.\n"
@@ -950,10 +966,11 @@ compile_tag_test_() ->
          [["lists",reverse],["list_to_atom"]],
          []},
         "t(_, {identifier, _, L} = T, _) ->\n"
-        "    setelement(3, T,\n"
-        "\t       begin\n"
-        "\t\t L1 = lists:reverse(L), L2 = list_to_atom(L1), L2\n"
-        "\t       end)."),
+        "    setelement(3,\n"
+        "               T,\n"
+        "               begin\n"
+        "                   L1 = lists:reverse(L), L2 = list_to_atom(L1), L2\n"
+        "               end)."),
      ?_test_tag(
         "foo: dummy, expr test:dummy(L1) end.",
         {tag,
@@ -962,10 +979,11 @@ compile_tag_test_() ->
          [[dummy], {code, _}],
          []},
         "t(_, {foo, _, L} = T, _) ->\n"
-        "    setelement(3, T,\n"
-        "\t       begin\n"
-        "\t\t L1 = dummy(L), L2 = begin test:dummy(L1) end, L2\n"
-        "\t       end)."),
+        "    setelement(3,\n"
+        "               T,\n"
+        "               begin\n"
+        "                   L1 = dummy(L), L2 = begin test:dummy(L1) end, L2\n"
+        "               end)."),
      ?_test_tag(
         "foo:expr setelement(1, T, bar) end.",
         {tag,
