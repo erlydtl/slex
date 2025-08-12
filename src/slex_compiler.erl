@@ -1147,6 +1147,6 @@ extra_data_test() ->
           ]}
         ],
     {ok, Scanner} = scan_and_parse(String, [{extra_data, Extra}]),
-    ?assertMatch(Expect, Scanner).
+    ?assertMatch(Expect, lists:sort(Scanner)).
 
 -endif.
