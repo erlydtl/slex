@@ -6,6 +6,22 @@ slex
 Stateful Lexical Analyzer Compiler.
 
 
+Rebar3 plugin
+=============
+
+To integrate the slex compiler in your Rebar3 build, you can put the
+following in your `rebar.conf` file:
+```
+{project_plugins,
+     [
+      {slex, {git, "https://github.com/erlydtl/slex.git", {tag, "0.2.3"}}}
+     ]}.
+```
+
+Then, running `rebar3 slex compile` will compile your `src/*.slex` files
+into corresponing `src/*.erl` files which you can check in as part of your
+project.
+
 language
 ========
 
